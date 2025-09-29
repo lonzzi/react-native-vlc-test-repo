@@ -1,41 +1,42 @@
-import { withAndroidManifest } from "@expo/config-plugins";
+const { withAndroidManifest } = require("expo/config-plugins");
 
-const withAndroidPip = (config) => {
-  return withAndroidManifest(config, (config) => {
-    const manifest = config.modResults.manifest;
-    const application = Array.isArray(manifest.application)
-      ? manifest.application[0]
-      : manifest.application;
+const _withGoogleCastAndroidManifest = (config) =>
+  withAndroidManifest(config, async (mod) => {
+    const mainApplication = mod.modResults.manifest.application[0];
 
-    if (!application || !Array.isArray(application.activity)) {
-      return config;
+    // Initialize activity array if it doesn't exist
+    if (!mainApplication.activity) {
+      mainApplication.activity = [];
     }
 
-    const activities = application.activity;
-    const launcherActivity =
-      activities.find((activity) => {
-        const intentFilters = activity["intent-filter"] || [];
-        return intentFilters.some((filter) => {
-          const actions = filter.action || [];
-          const categories = filter.category || [];
-          const hasMain = actions.some(
-            (a) => a["$"]["android:name"] === "android.intent.action.MAIN"
-          );
-          const hasLauncher = categories.some(
-            (c) => c["$"]["android:name"] === "android.intent.category.LAUNCHER"
-          );
-          return hasMain && hasLauncher;
-        });
-      }) || activities[0];
+    const googleCastActivityExists = mainApplication.activity.some(
+      (activity) =>
+        activity.$?.["android:name"] ===
+        "com.reactnative.googlecast.RNGCExpandedControllerActivity",
+    );
 
-    if (launcherActivity) {
-      launcherActivity.$ = launcherActivity.$ || {};
-      launcherActivity.$["android:resizeableActivity"] = "true";
-      launcherActivity.$["android:supportsPictureInPicture"] = "true";
+    // Only add the activity if it doesn't already exist
+    if (!googleCastActivityExists) {
+      mainApplication.activity.push({
+        $: {
+          "android:name":
+            "com.reactnative.googlecast.RNGCExpandedControllerActivity",
+          "android:theme": "@style/Theme.MaterialComponents.NoActionBar",
+          "android:launchMode": "singleTask",
+          "android:exported": "false",
+        },
+      });
     }
 
-    return config;
+    const mainActivity = mainApplication.activity.find(
+      (activity) => activity.$?.["android:name"] === ".MainActivity",
+    );
+
+    if (mainActivity?.$) {
+      mainActivity.$["android:supportsPictureInPicture"] = "true";
+    }
+
+    return mod;
   });
-};
 
-export default withAndroidPip;
+module.exports = _withGoogleCastAndroidManifest;
