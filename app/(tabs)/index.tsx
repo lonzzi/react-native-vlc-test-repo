@@ -6,11 +6,13 @@ import ParallaxScrollView from "@/components/ParallaxScrollView";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { useRouter, useSegments } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import * as ScreenOrientation from "expo-screen-orientation";
+import { VlcPlayerView, VlcPlayerViewRef } from "@/modules";
 
 export default function HomeScreen() {
   const router = useRouter();
+  const playerRef = useRef<VlcPlayerViewRef>(null);
 
   const segments = useSegments();
 
@@ -33,13 +35,13 @@ export default function HomeScreen() {
         />
       }
     >
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <Button
-        title="Go to Landscape"
-        onPress={() => router.push("/landscape")}
+      <VlcPlayerView
+        ref={playerRef}
+        source={{
+          uri: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+          autoplay: true,
+        }}
+        style={{ width: "100%", height: 300 }}
       />
       <ThemedView style={styles.stepContainer}>
         <ThemedText type="subtitle">Step 1: Try it</ThemedText>
